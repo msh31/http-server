@@ -80,6 +80,13 @@ namespace HTTP
             
             std::cout << "Client connected!" << "\n";
 
+            char buffer[1024];
+            int bytes = recv(client_socket, buffer, sizeof(buffer)-1, 0);
+            if (bytes > 0) {
+                buffer[bytes] = '\0';
+                std::cout << "=== Browser Request ===\n" << buffer << "\n";
+            }
+
             std::string html_content =
                 "<html><head><title>Marco's HTTP Server</title></head><body>"
                 "<h1>Welcome to my first HTTP server!</h1>"
