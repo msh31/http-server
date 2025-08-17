@@ -5,6 +5,7 @@
     #define CLOSE_SOCKET(s) closesocket(s)
     #define SOCKADDR_CAST (SOCKADDR *)
     #define SOCKET_ERROR (-1)
+    #define SOCKLEN_T int 
 #else
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -16,6 +17,7 @@
     #define INVALID_SOCKET (-1)
     #define SOCKADDR_CAST (struct sockaddr *)
     #define SOCKET_ERROR (-1)
+    #define SOCKLEN_T socklen_t
 #endif
 
 class SocketWrapper {

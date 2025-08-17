@@ -1,3 +1,6 @@
 .vscode/*
 build/*
 Debug/*
+http-server
+cmake-build-debug/*
+.idea/*

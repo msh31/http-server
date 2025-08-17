@@ -13,12 +13,13 @@ namespace HTTP
             tcp_server(std::string ip_address, int port);
             ~tcp_server();   
             
-            bool startServer();
+            int startServer();
             
         private:
             SOCKET m_socket;
             sockaddr_in m_server_address;
             std::string m_ip_address;
+            std::string getCurrentTime();
             int m_port;
     };
 }
