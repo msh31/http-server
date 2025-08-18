@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "socket_wrapper.hpp"
+#include "router.hpp"
 
 #pragma once
 
@@ -19,7 +20,10 @@ namespace HTTP
             SOCKET m_socket;
             sockaddr_in m_server_address;
             std::string m_ip_address;
-            std::string getCurrentTime();
             int m_port;
+            RequestRouter m_router;
+
+            std::string getCurrentTime();
+            void setupRoutes(); 
     };
 }

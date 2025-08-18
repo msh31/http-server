@@ -8,6 +8,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(SOURCE_FILES 
     main.cpp
     tcp_server.cpp
+    router.cpp
 )
 
 add_executable(http-server ${SOURCE_FILES})

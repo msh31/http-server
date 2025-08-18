@@ -1,4 +1,5 @@
 #include "tcp_server.hpp"
+
 #include <ctime>
 #include <sstream>
 
@@ -8,6 +9,7 @@ namespace HTTP
         m_ip_address = ip_address;
         m_port = port;
 
+        setupRoutes();
         startServer();
     }
 
@@ -35,6 +37,28 @@ namespace HTTP
             << local_time->tm_sec;
 
         return oss.str();
+    }
+
+    void tcp_server::setupRoutes() {
+        m_router.addRoute("GET /", [this](const HttpRequest& req) -> std::string {
+            std::string html_content =
+                "<html><head><title>Marco's HTTP Server</title></head><body>"
+                "<h1>Welcome to my first HTTP server!</h1>"
+                "<p>Built from scratch in C++</p>"
+                "<p>Time: " + getCurrentTime() + "</p>"
+                "<a href='/api/time'>Get Time API</a>"
+                "</body></html>";
+            
+            return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + 
+                   std::to_string(html_content.length()) + "\r\n\r\n" + html_content;
+        });
+        
+        // json api route
+        m_router.addRoute("GET /api/time", [this](const HttpRequest& req) -> std::string {
+            std::string json = "{\"time\":\"" + getCurrentTime() + "\",\"status\":\"ok\"}";
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + 
+                   std::to_string(json.length()) + "\r\n\r\n" + json;
+        });
     }
 
     int tcp_server::startServer() {
@@ -86,20 +110,9 @@ namespace HTTP
                 buffer[bytes] = '\0';
                 std::cout << "=== Browser Request ===\n" << buffer << "\n";
             }
-
-            std::string html_content =
-                "<html><head><title>Marco's HTTP Server</title></head><body>"
-                "<h1>Welcome to my first HTTP server!</h1>"
-                "<p>Built from scratch in C++</p>"
-                "<p>Time: " + getCurrentTime() + "</p>"
-                "</body></html>";
-
-            std::string response =
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html\r\n"
-                "Content-Length: " + std::to_string(html_content.length()) + "\r\n"
-                "\r\n" +
-                html_content;
+            
+            HttpRequest request = m_router.parseHttpRequest(std::string(buffer));
+            std::string response = m_router.handleRequest(request);
 
             send(client_socket, response.c_str(), response.length(), 0);
             CLOSE_SOCKET(client_socket);
