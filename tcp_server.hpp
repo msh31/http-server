@@ -15,7 +15,8 @@ namespace HTTP
             ~tcp_server();   
             
             int startServer();
-            
+            void handleClient(SOCKET client_socket);
+        
         private:
             SOCKET m_socket;
             sockaddr_in m_server_address;

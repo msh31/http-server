@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <sstream>
+#include <thread>
 
 namespace HTTP 
 {    
@@ -101,21 +102,25 @@ namespace HTTP
                 std::cout << "Accept failed" << "\n";
                 continue;
             }
-            
-            std::cout << "Client connected!" << "\n";
 
-            char buffer[1024];
-            int bytes = recv(client_socket, buffer, sizeof(buffer)-1, 0);
-            if (bytes > 0) {
-                buffer[bytes] = '\0';
-                std::cout << "=== Browser Request ===\n" << buffer << "\n";
+            if (client_socket != INVALID_SOCKET) {
+                std::thread client_thread(&tcp_server::handleClient, this, client_socket);
+                client_thread.detach();
             }
-            
-            HttpRequest request = m_router.parseHttpRequest(std::string(buffer));
-            std::string response = m_router.handleRequest(request);
-
-            send(client_socket, response.c_str(), response.length(), 0);
-            CLOSE_SOCKET(client_socket);
         }
     }
-} 
+
+    void tcp_server::handleClient(SOCKET client_socket) {
+        char buffer[1024];
+        int bytes = recv(client_socket, buffer, sizeof(buffer)-1, 0);
+
+        if (bytes > 0) {
+            buffer[bytes] = '\0';
+            HttpRequest request = m_router.parseHttpRequest(std::string(buffer));
+            std::string response = m_router.handleRequest(request);
+            send(client_socket, response.c_str(), response.length(), 0);
+        }
+
+        CLOSE_SOCKET(client_socket);
+    }
+}
