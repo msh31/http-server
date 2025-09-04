@@ -1,9 +1,5 @@
 #include "tcp_server.hpp"
 
-#include <ctime>
-#include <sstream>
-#include <thread>
-
 namespace HTTP 
 {    
     tcp_server::tcp_server(std::string ip_address, int port) {
@@ -41,24 +37,15 @@ namespace HTTP
     }
 
     void tcp_server::setupRoutes() {
-        m_router.addRoute("GET /", [this](const HttpRequest& req) -> std::string {
-            std::string html_content =
-                "<html><head><title>Marco's HTTP Server</title></head><body>"
-                "<h1>Welcome to my first HTTP server!</h1>"
-                "<p>Built from scratch in C++</p>"
-                "<p>Time: " + getCurrentTime() + "</p>"
-                "<a href='/api/time'>Get Time API</a>"
-                "</body></html>";
-            
-            return "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: " + 
-                   std::to_string(html_content.length()) + "\r\n\r\n" + html_content;
-        });
-        
         // json api route
-        m_router.addRoute("GET /api/time", [this](const HttpRequest& req) -> std::string {
+        m_router.addRoute("GET /api/time", [this](const HttpRequest&) -> std::string {
             std::string json = "{\"time\":\"" + getCurrentTime() + "\",\"status\":\"ok\"}";
-            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + 
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " +
                    std::to_string(json.length()) + "\r\n\r\n" + json;
+        });
+
+        m_router.addRoute("GET *", [this](const HttpRequest& req) -> std::string {
+            return serveContent(req.path);
         });
     }
 
@@ -114,13 +101,50 @@ namespace HTTP
         char buffer[1024];
         int bytes = recv(client_socket, buffer, sizeof(buffer)-1, 0);
 
+        std::cout << "Client connected!" << "\n";
+
         if (bytes > 0) {
             buffer[bytes] = '\0';
+
             HttpRequest request = m_router.parseHttpRequest(std::string(buffer));
             std::string response = m_router.handleRequest(request);
+
             send(client_socket, response.c_str(), response.length(), 0);
+            std::cout << "=== Browser Request ===\n" << buffer << "\n";
         }
 
         CLOSE_SOCKET(client_socket);
+    }
+
+    std::string tcp_server::serveContent(const std::string& path) {
+        std::string actualPath = path;
+
+        if (path == "/") {
+            actualPath = "/index.html";
+        }
+        std::string filepath = "./www" + actualPath;
+        std::ifstream file(filepath, std::ios::binary);
+
+        if (!file) {
+            return "HTTP/1.1 404 Not Found\r\nContent-Length: 13\r\n\r\n404 Not Found";
+        }
+
+        std::string content((std::istreambuf_iterator(file)), std::istreambuf_iterator<char>());
+
+        std::string contentType = getContentType(filepath);
+
+        return "HTTP/1.1 200 OK\r\nContent-Type: " + contentType +
+               "\r\nContent-Length: " + std::to_string(content.length()) +
+               "\r\n\r\n" + content;
+    }
+
+    std::string tcp_server::getContentType(const std::string& filepath) {
+        if (filepath.rfind(".html") == filepath.length() - 5) return "text/html";
+        if (filepath.rfind(".css") == filepath.length() - 4) return "text/css";
+        if (filepath.rfind(".js") == filepath.length() - 3) return "application/javascript";
+        if (filepath.rfind(".png") == filepath.length() - 4) return "image/png";
+        if (filepath.rfind(".jpg") == filepath.length() - 4) return "image/jpeg";
+        if (filepath.rfind(".jpeg") == filepath.length() - 5) return "image/jpeg";
+        return "application/octet-stream";
     }
 }

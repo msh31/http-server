@@ -8,12 +8,25 @@ void RequestRouter::addRoute(const std::string& path, std::function<std::string(
 
 std::string RequestRouter::handleRequest(const HttpRequest& req) {
     std::string route_key = req.method + " " + req.path;
-    
+
     auto it = routes.find(route_key);
     if (it != routes.end()) {
         return it->second(req);
     }
-    
+
+    // loop through the web dir for files to serve
+    // route_pattern = the key (like "GET *") & handler = the function to call
+    for (const auto& [route_pattern, handler] : routes) {
+        // string.split, the c++ way, takes that GET and puts that in the method, then the * in the path
+        std::istringstream pattern_stream(route_pattern);
+        std::string pattern_method, pattern_path;
+        pattern_stream >> pattern_method >> pattern_path;
+
+        if (pattern_method == req.method && pattern_path == "*") {
+            return handler(req);
+        }
+    }
+
     return "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 13\r\n\r\n404 Not Found";
 }
 

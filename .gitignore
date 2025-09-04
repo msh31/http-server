@@ -4,3 +4,4 @@ Debug/*
 http-server
 cmake-build-debug/*
 .idea/*
+*.exe
